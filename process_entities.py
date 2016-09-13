@@ -33,7 +33,7 @@ def stripRDF(url):
 def filter_mention(entityID):
   return entityID.startswith("m.")
 
-def en_filter(s):
+def eng_filter(s):
   return s.endswith("@en")
 
 class FreebaseData(object):
@@ -56,7 +56,9 @@ class FreebaseData(object):
     self.entityIDs = load(self.entityID_fname)
     print("Size of entityIDs set : %d" % len(self.entityIDs))
 
-    self.makeEntityNames(self.type_object_name_fname, self.entity_name_fname)
+    if not os.path.exists(self.entity_name_fname):
+      print("Creating entity name file...")
+      self.makeEntityNames(self.type_object_name_fname, self.entity_name_fname)
 
 
   def read_line(sefl, f):
@@ -89,8 +91,9 @@ class FreebaseData(object):
     if id exists in entityIDs then, strip name and store
     '''
     def cleanValue(s):
+      '''Removes \" and @en'''
       return s[1:-4]
-
+    #enddef
 
     f = gzip.open(type_object_name_fname, 'rt')
     out_f = open(entity_name_fname, 'w')
@@ -100,12 +103,10 @@ class FreebaseData(object):
     while line != '' and len(entityIDs) != 0:
       l_split = line.split("\t")
       entity_id = stripRDF(l_split[0])
-      if entity_id in entityIDs:
-        name = l_split[2]
-        if en_filter(name):
-          name = cleanValue(name)
-          out_f.write(str(entity_id) + "\t" + name + "\n")
-          entityIDs.remove(entity_id)
+      if entity_id in entityIDs and eng_filter(l_split[2]):
+        name = cleanValue(l_split[2])
+        out_f.write(name + "\t" + str(entity_id) + "\n")
+        entityIDs.remove(entity_id)
       line = self.read_line(f)
 
     out_f.close()
