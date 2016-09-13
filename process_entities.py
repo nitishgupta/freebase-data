@@ -6,7 +6,6 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-#-db DATABSE -u USERNAME -p PASSWORD -size 20
 parser.add_argument("-object_type_person_fname", "--object_type_person_fname",
                     help="Filepath of people.person - type.object.type gz")
 parser.add_argument("-entityID_fname", "--entityID_fname",
@@ -15,7 +14,6 @@ parser.add_argument("-type_object_name_fname", "--type_object_name_fname",
                     help="Filepath to type.object.name gz")
 parser.add_argument("-entity_name_fname", "--entity_name_fname",
                     help="Output filepath to \'entityID \\t name\' file")
-
 
 
 def save(fname, obj):
@@ -112,11 +110,6 @@ class FreebaseData(object):
 
     out_f.close()
     f.close()
-
-
-
-
-
 
 
 if __name__ == '__main__':
