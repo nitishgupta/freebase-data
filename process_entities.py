@@ -10,11 +10,27 @@ parser.add_argument("-object_type_person_fname", "--object_type_person_fname",
                     help="Filepath of people.person - type.object.type gz")
 parser.add_argument("-entityID_fname", "--entityID_fname",
                     help="Filepath to pickle dump of entityID set")
+parser.add_argument("--entityID_wname_fname",
+                    help="Filepath to pickle dump of set of entityIDs with names")
 parser.add_argument("-type_object_name_fname", "--type_object_name_fname",
                     help="Filepath to type.object.name gz")
 parser.add_argument("-entity_name_fname", "--entity_name_fname",
                     help="Output filepath to \'entityID \\t name\' file")
+parser.add_argument("--common_topic_alias_fname",
+                    help="Filepath to common.topic.alias.en.gz file")
+parser.add_argument("--entity_alias_name_fname",
+                    help="Output filepath to \'entityID \\t alias name\' file")
+parser.add_argument("--default_flags", action="store_true", default=False,
+                    help="use default flags")
 
+def default_flags():
+  FLAGS.object_type_person_fname = "/save/ngupta19/people.person.gz"
+  FLAGS.entityID_fname = "/save/ngupta19/people.person.entityIDs"
+  FLAGS.entityID_wname_fname = "/save/ngupta19/people.person.wname.entityIDs."
+  FLAGS.type_object_name_fname = "/save/ngupta19/type.object.name.en.gz"
+  FLAGS.entity_name_fname = "/save/ngupta19/entity.names"
+  FLAGS.common_topic_alias_fname = "/save/ngupta19/common.topic.alias.en.gz"
+  FLAGS.entity_alias_name_fname = "/save/ngupta19/entity.alias.names"
 
 def save(fname, obj):
   with open(fname, 'wb') as f:
@@ -38,11 +54,16 @@ def eng_filter(s):
 
 class FreebaseData(object):
   def __init__(self, object_type_person_fname, entityID_fname,
-               type_object_name_fname, entity_name_fname):
+               entityID_wname_fname, type_object_name_fname,
+               entity_name_fname, common_topic_alias_fname,
+               entity_alias_name_fname):
     self.object_type_person_fname = object_type_person_fname
     self.entityID_fname = entityID_fname
+    self.entityID_wname_fname = entityID_wname_fname
     self.type_object_name_fname = type_object_name_fname
     self.entity_name_fname = entity_name_fname
+    self.common_topic_alias_fname = common_topic_alias_fname
+    self.entity_alias_name_fname = entity_alias_name_fname
 
     if not os.path.exists(self.object_type_person_fname):
       "ERROR: people.person does not exist : %s" % self.object_type_person_fname
@@ -54,11 +75,20 @@ class FreebaseData(object):
 
     print("Loading entity ID set...")
     self.entityIDs = load(self.entityID_fname)
-    print("Size of entityIDs set : %d" % len(self.entityIDs))
+    print("Num of person entityIDs : %d" % len(self.entityIDs))
 
-    if not os.path.exists(self.entity_name_fname):
+    if not os.path.exists(self.entity_name_fname) or not os.path.exists(self.entityID_wname_fname):
       print("Creating entity name file...")
-      self.makeEntityNames(self.type_object_name_fname, self.entity_name_fname)
+      self.entityIDs_wname = self.makeEntityNames(self.type_object_name_fname,
+                                                  self.entity_name_fname,
+                                                  self.entityID_wname_fname)
+    print("Loading entity IDs with names set...")
+    self.entityIDs_wname = load(self.entityID_wname_fname)
+    print("Number of entityIDs with name : %d" % len(self.entityIDs_wname))
+
+    self.makeEntityAliasNames(self.common_topic_alias_fname,
+                              self.type_object_name_fname,
+                              self.entity_alias_name_fname) 
 
 
   def read_line(sefl, f):
@@ -85,7 +115,8 @@ class FreebaseData(object):
     f.close()
     save(entityID_fname, entityIDs)
 
-  def makeEntityNames(self, type_object_name_fname, entity_name_fname):
+  def makeEntityNames(self, type_object_name_fname, entity_name_fname,
+                      entityID_wname_fname):
     '''Input : type.object.name predicate freebase data
     Removes rdf from topic id url
     if id exists in entityIDs then, strip name and store
@@ -108,15 +139,77 @@ class FreebaseData(object):
         out_f.write(name + "\t" + str(entity_id) + "\n")
         entityIDs.remove(entity_id)
       line = self.read_line(f)
-
     out_f.close()
     f.close()
+    # entityIDs - person entities that do not have name
+    # self.entityIDs - all person entities
+    # diff should give entities with names.
+    entityIDs_wname = self.entityIDs.difference(entityIDs)
+    save(entityID_wname_fname, entityIDs_wname)
+
+  def  makeEntityAliasNames(self, common_topic_alias_fname,
+                            type_object_name_fname,
+                            entity_alias_name_fname):
+    '''entity_name_fname - name\tentityID
+
+    output_alias_entity_fname - entityID\\tname
+    Can have multiple entries for same entityID'''
+    def cleanValue(s):
+      '''Removes \" and @en'''
+      return s[1:-4]
+    #enddef
+
+    alias_entityIDs = set()
+    f = gzip.open(common_topic_alias_fname, 'rt')
+    line = self.read_line(f)
+    while line != '':
+      entity_url = line.split("\t")[0]
+      entity_id = stripRDF(entity_url)
+      if filter_mention(entity_id):
+        alias_entityIDs.add(entity_id)
+      line = self.read_line(f)
+    f.close()
+    person_walias_entity_IDs = alias_entityIDs.intersection(self.entityIDs_wname)
+    print("Number of entities with name and alias : %d" % len(person_walias_entity_IDs))
+    # Open common.topic.alias file
+    f = gzip.open(common_topic_alias_fname, 'rt')
+    out_f = open(entity_alias_name_fname, 'w')
+    line = self.read_line(f)
+    while line != '':
+      l_split = line.split("\t")
+      entity_id = stripRDF(l_split[0])
+      if entity_id in person_walias_entity_IDs and eng_filter(l_split[2]):
+        alias_name = cleanValue(l_split[2])
+        out_f.write(alias_name + "\t" + str(entity_id) + "\n")
+      line = self.read_line(f)
+    f.close()
+
+    # Open type.object.name.en file
+    f = gzip.open(type_object_name_fname, 'rt')
+    line = self.read_line(f)
+    while line != '':
+      l_split = line.split("\t")
+      entity_id = stripRDF(l_split[0])
+      if entity_id in person_walias_entity_IDs and eng_filter(l_split[2]):
+        name = cleanValue(l_split[2])
+        out_f.write(name + "\t" + str(entity_id) + "\n")
+      line = self.read_line(f)
+    f.close()
+    out_f.close()
+
+
+
+
 
 
 if __name__ == '__main__':
   FLAGS = parser.parse_args()
+  default_flags()
   b = FreebaseData(object_type_person_fname=FLAGS.object_type_person_fname,
                    entityID_fname=FLAGS.entityID_fname,
+                   entityID_wname_fname=FLAGS.entityID_wname_fname,
                    type_object_name_fname=FLAGS.type_object_name_fname,
-                   entity_name_fname=FLAGS.entity_name_fname)
+                   entity_name_fname=FLAGS.entity_name_fname,
+                   common_topic_alias_fname=FLAGS.common_topic_alias_fname,
+                   entity_alias_name_fname=FLAGS.entity_alias_name_fname)
 
