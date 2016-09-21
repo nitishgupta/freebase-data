@@ -31,6 +31,8 @@ def default_flags():
   FLAGS.entity_name_fname = "/save/ngupta19/entity.names"
   FLAGS.common_topic_alias_fname = "/save/ngupta19/common.topic.alias.en.gz"
   FLAGS.entity_alias_name_fname = "/save/ngupta19/entity.alias.names"
+  FLAGS.entity_name_walias_fname = "/save/ngupta19/entity.names.w.alias"
+
 
 def save(fname, obj):
   with open(fname, 'wb') as f:
@@ -56,7 +58,7 @@ class FreebaseData(object):
   def __init__(self, object_type_person_fname, entityID_fname,
                entityID_wname_fname, type_object_name_fname,
                entity_name_fname, common_topic_alias_fname,
-               entity_alias_name_fname):
+               entity_alias_name_fname, entity_name_walias_fname):
     self.object_type_person_fname = object_type_person_fname
     self.entityID_fname = entityID_fname
     self.entityID_wname_fname = entityID_wname_fname
@@ -64,6 +66,7 @@ class FreebaseData(object):
     self.entity_name_fname = entity_name_fname
     self.common_topic_alias_fname = common_topic_alias_fname
     self.entity_alias_name_fname = entity_alias_name_fname
+    self.entity_name_walias_fname = entity_name_walias_fname
 
     if not os.path.exists(self.object_type_person_fname):
       "ERROR: people.person does not exist : %s" % self.object_type_person_fname
@@ -86,9 +89,11 @@ class FreebaseData(object):
     self.entityIDs_wname = load(self.entityID_wname_fname)
     print("Number of entityIDs with name : %d" % len(self.entityIDs_wname))
 
+    print("Making Alias Data")
     self.makeEntityAliasNames(self.common_topic_alias_fname,
                               self.type_object_name_fname,
-                              self.entity_alias_name_fname) 
+                              self.entity_alias_name_fname,
+                              self.entity_name_walias_fname)
 
 
   def read_line(sefl, f):
@@ -149,7 +154,8 @@ class FreebaseData(object):
 
   def  makeEntityAliasNames(self, common_topic_alias_fname,
                             type_object_name_fname,
-                            entity_alias_name_fname):
+                            entity_alias_name_fname,
+                            entity_name_walias_fname):
     '''entity_name_fname - name\tentityID
 
     output_alias_entity_fname - entityID\\tname
@@ -171,6 +177,7 @@ class FreebaseData(object):
     f.close()
     person_walias_entity_IDs = alias_entityIDs.intersection(self.entityIDs_wname)
     print("Number of entities with name and alias : %d" % len(person_walias_entity_IDs))
+    num_alias_names = 0
     # Open common.topic.alias file
     f = gzip.open(common_topic_alias_fname, 'rt')
     out_f = open(entity_alias_name_fname, 'w')
@@ -181,11 +188,14 @@ class FreebaseData(object):
       if entity_id in person_walias_entity_IDs and eng_filter(l_split[2]):
         alias_name = cleanValue(l_split[2])
         out_f.write(alias_name + "\t" + str(entity_id) + "\n")
+        num_alias_names += 1
       line = self.read_line(f)
     f.close()
-
+    print("Number of alias strings : %d" % num_alias_names)
+    num_alias_orig_names = 0
     # Open type.object.name.en file
     f = gzip.open(type_object_name_fname, 'rt')
+    out_f2 = open(entity_name_walias_fname, 'w')
     line = self.read_line(f)
     while line != '':
       l_split = line.split("\t")
@@ -193,13 +203,13 @@ class FreebaseData(object):
       if entity_id in person_walias_entity_IDs and eng_filter(l_split[2]):
         name = cleanValue(l_split[2])
         out_f.write(name + "\t" + str(entity_id) + "\n")
+        out_f2.write(name + "\t" + str(entity_id) + "\n")
+        num_alias_orig_names += 1
       line = self.read_line(f)
     f.close()
+    print("Number of original name strings : %d" % num_alias_orig_names)
     out_f.close()
-
-
-
-
+    out_f2.close()
 
 
 if __name__ == '__main__':
@@ -211,5 +221,6 @@ if __name__ == '__main__':
                    type_object_name_fname=FLAGS.type_object_name_fname,
                    entity_name_fname=FLAGS.entity_name_fname,
                    common_topic_alias_fname=FLAGS.common_topic_alias_fname,
-                   entity_alias_name_fname=FLAGS.entity_alias_name_fname)
+                   entity_alias_name_fname=FLAGS.entity_alias_name_fname,
+                   entity_name_walias_fname=FLAGS.entity_name_walias_fname)
 
