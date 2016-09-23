@@ -89,11 +89,13 @@ class FreebaseData(object):
     self.entityIDs_wname = load(self.entityID_wname_fname)
     print("Number of entityIDs with name : %d" % len(self.entityIDs_wname))
 
-    print("Making Alias Data")
-    self.makeEntityAliasNames(self.common_topic_alias_fname,
-                              self.type_object_name_fname,
-                              self.entity_alias_name_fname,
-                              self.entity_name_walias_fname)
+    if not os.path.exists(self.entity_alias_name_fname) or not os.path.exists(self.entity_name_walias_fname):
+      print("Making Alias Data")
+      self.makeEntityAliasNames(self.common_topic_alias_fname,
+                                self.type_object_name_fname,
+                                self.entity_alias_name_fname,
+                                self.entity_name_walias_fname)
+    print("# Loaded Freebase Data!!")
 
 
   def read_line(sefl, f):
