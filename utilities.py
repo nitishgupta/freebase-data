@@ -5,6 +5,7 @@ import pickle
 import argparse
 
 from process_entities import FreebaseData
+import process_entities
 
 parser = argparse.ArgumentParser()
 
@@ -74,6 +75,31 @@ class UtilityFunctions(FreebaseData):
     out_file.close()
     f.close()
 
+  def makeMIDValueFile(self, freebase_pred_file, output_filepath):
+    '''Input : freebase data in
+    <http://rdf.freebase.com/ns/m.0105jw0f>\t<http://rdf.freebase.com/predicate>\t"VALUE"    .
+
+    Output file:
+    m.m.0105jw0f \t Value
+    '''
+    def cleanValue(s):
+      '''Removes \"s '''
+      return s[1:-1]
+    #enddef
+    print("Making mid \\t Value file...")
+    f = gzip.open(freebase_pred_file, 'rt')
+    out_f = open(output_filepath, 'w')
+
+    line = self.read_line(f)
+    while line != '':
+      l_split = line.split("\t")
+      mid = process_entities.stripRDF(l_split[0])
+      name = cleanValue(l_split[2])
+      out_f.write(str(mid) + "\t" + name + "\n")
+      line = self.read_line(f)
+    out_f.close()
+    f.close()
+
 if __name__ == '__main__':
   FLAGS = parser.parse_args()
   default_flags()
@@ -87,10 +113,12 @@ if __name__ == '__main__':
                    entity_name_walias_fname=FLAGS.entity_name_walias_fname)
 
   util = UtilityFunctions()
-  util.all_names_for_mids(
-    b,
-    "/home/ngupta19/rnn-vae/data/freebase_alias/top_entities",
-    "/home/ngupta19/rnn-vae/data/freebase_alias/top_entities_name")
+  # util.all_names_for_mids(
+  #   b,
+  #   "/home/ngupta19/rnn-vae/data/fb_min_15/mid_min_15",
+  #   "/home/ngupta19/rnn-vae/data/fb_min_15/fb_min_15_names")
+  util.makeMIDValueFile("/save/ngupta19/wikipedia.en_title.gz",
+                        "/save/ngupta19/mid.wikipedia_en_title")
 
 
 
