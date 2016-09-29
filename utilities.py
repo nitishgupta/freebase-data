@@ -27,14 +27,14 @@ parser.add_argument("--default_flags", action="store_true", default=False,
                     help="use default flags")
 
 def default_flags():
-  FLAGS.object_type_person_fname = "/save/ngupta19/people.person.gz"
-  FLAGS.entityID_fname = "/save/ngupta19/people.person.entityIDs"
-  FLAGS.entityID_wname_fname = "/save/ngupta19/people.person.wname.entityIDs."
-  FLAGS.type_object_name_fname = "/save/ngupta19/type.object.name.en.gz"
-  FLAGS.entity_name_fname = "/save/ngupta19/entity.names"
-  FLAGS.common_topic_alias_fname = "/save/ngupta19/common.topic.alias.en.gz"
-  FLAGS.entity_alias_name_fname = "/save/ngupta19/entity.alias.names"
-  FLAGS.entity_name_walias_fname = "/save/ngupta19/entity.names.w.alias"
+  FLAGS.object_type_person_fname = "/save/ngupta19/freebase/people.person.gz"
+  FLAGS.entityID_fname = "/save/ngupta19/freebase/people.person.entityIDs"
+  FLAGS.entityID_wname_fname = "/save/ngupta19/freebase/people.person.wname.entityIDs"
+  FLAGS.type_object_name_fname = "/save/ngupta19/freebase/type.object.name.en.gz"
+  FLAGS.entity_name_fname = "/save/ngupta19/freebase/entity.names"
+  FLAGS.common_topic_alias_fname = "/save/ngupta19/freebase/common.topic.alias.en.gz"
+  FLAGS.entity_alias_name_fname = "/save/ngupta19/freebase/entity.alias.names"
+  FLAGS.entity_name_walias_fname = "/save/ngupta19/freebase/entity.names.w.alias"
 
 class UtilityFunctions(FreebaseData):
   def __init__(self):
@@ -68,7 +68,7 @@ class UtilityFunctions(FreebaseData):
     f = open(fb_data.entity_alias_name_fname, 'r')
     line = self.read_line(f)
     while line != '':
-      name, mid = line.strip().split("\t")
+      mid, name = line.strip().split("\t")
       if mid in mid_set:
         out_file.write(line)
       line = self.read_line(f)
@@ -95,7 +95,8 @@ class UtilityFunctions(FreebaseData):
       l_split = line.split("\t")
       mid = process_entities.stripRDF(l_split[0])
       name = cleanValue(l_split[2])
-      out_f.write(str(mid) + "\t" + name + "\n")
+      if process_entities.filter_mention(mid):
+        out_f.write(str(mid) + "\t" + name + "\n")
       line = self.read_line(f)
     out_f.close()
     f.close()
@@ -117,8 +118,8 @@ if __name__ == '__main__':
   #   b,
   #   "/home/ngupta19/rnn-vae/data/fb_min_15/mid_min_15",
   #   "/home/ngupta19/rnn-vae/data/fb_min_15/fb_min_15_names")
-  util.makeMIDValueFile("/save/ngupta19/wikipedia.en_title.gz",
-                        "/save/ngupta19/mid.wikipedia_en_title")
+  util.makeMIDValueFile("/save/ngupta19/freebase/wikipedia.en_title.gz",
+                        "/save/ngupta19/freebase/mid.wikipedia_en_title")
 
 
 

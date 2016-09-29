@@ -24,14 +24,14 @@ parser.add_argument("--default_flags", action="store_true", default=False,
                     help="use default flags")
 
 def default_flags():
-  FLAGS.object_type_person_fname = "/save/ngupta19/people.person.gz"
-  FLAGS.entityID_fname = "/save/ngupta19/people.person.entityIDs"
-  FLAGS.entityID_wname_fname = "/save/ngupta19/people.person.wname.entityIDs."
-  FLAGS.type_object_name_fname = "/save/ngupta19/type.object.name.en.gz"
-  FLAGS.entity_name_fname = "/save/ngupta19/entity.names"
-  FLAGS.common_topic_alias_fname = "/save/ngupta19/common.topic.alias.en.gz"
-  FLAGS.entity_alias_name_fname = "/save/ngupta19/entity.alias.names"
-  FLAGS.entity_name_walias_fname = "/save/ngupta19/entity.names.w.alias"
+  FLAGS.object_type_person_fname = "/save/ngupta19/freebase/people.person.gz"
+  FLAGS.entityID_fname = "/save/ngupta19/freebase/people.person.entityIDs"
+  FLAGS.entityID_wname_fname = "/save/ngupta19/freebase/people.person.wname.entityIDs"
+  FLAGS.type_object_name_fname = "/save/ngupta19/freebase/type.object.name.en.gz"
+  FLAGS.entity_name_fname = "/save/ngupta19/freebase/entity.names"
+  FLAGS.common_topic_alias_fname = "/save/ngupta19/freebase/common.topic.alias.en.gz"
+  FLAGS.entity_alias_name_fname = "/save/ngupta19/freebase/entity.alias.names"
+  FLAGS.entity_name_walias_fname = "/save/ngupta19/freebase/entity.names.w.alias"
 
 
 def save(fname, obj):
@@ -143,7 +143,7 @@ class FreebaseData(object):
       entity_id = stripRDF(l_split[0])
       if entity_id in entityIDs and eng_filter(l_split[2]):
         name = cleanValue(l_split[2])
-        out_f.write(name + "\t" + str(entity_id) + "\n")
+        out_f.write(str(entity_id) + "\t" + name + "\n")
         entityIDs.remove(entity_id)
       line = self.read_line(f)
     out_f.close()
@@ -167,6 +167,7 @@ class FreebaseData(object):
       return s[1:-4]
     #enddef
 
+    # Making alias entity ids set
     alias_entityIDs = set()
     f = gzip.open(common_topic_alias_fname, 'rt')
     line = self.read_line(f)
@@ -189,7 +190,7 @@ class FreebaseData(object):
       entity_id = stripRDF(l_split[0])
       if entity_id in person_walias_entity_IDs and eng_filter(l_split[2]):
         alias_name = cleanValue(l_split[2])
-        out_f.write(alias_name + "\t" + str(entity_id) + "\n")
+        out_f.write(str(entity_id) + "\t" + alias_name + "\n")
         num_alias_names += 1
       line = self.read_line(f)
     f.close()
@@ -204,8 +205,8 @@ class FreebaseData(object):
       entity_id = stripRDF(l_split[0])
       if entity_id in person_walias_entity_IDs and eng_filter(l_split[2]):
         name = cleanValue(l_split[2])
-        out_f.write(name + "\t" + str(entity_id) + "\n")
-        out_f2.write(name + "\t" + str(entity_id) + "\n")
+        out_f.write(str(entity_id) + "\t" + name + "\n")
+        out_f2.write(str(entity_id) + "\t" + name + "\n")
         num_alias_orig_names += 1
       line = self.read_line(f)
     f.close()
