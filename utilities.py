@@ -60,6 +60,19 @@ class UtilityFunctions(FreebaseData):
 
     return mid_set
 
+  def type_set(self, types_filepath):
+    print("# Making types set ...")
+    assert os.path.exists(types_filepath)
+    f = open(types_filepath, 'r')
+    types_set = set()
+    line = self.read_line(f)
+    while line != '':
+      types_set.add(line.strip())
+      line = self.read_line(f)
+    f.close()
+    print("# Number of types : %d" % len(types_set))
+    return types_set
+
   def all_names_for_mids(self, fb_data, mid_filepath, output_filepath):
     print("# Get all names for entities provided")
     mid_set = self.mid_set(mid_filepath)
@@ -77,10 +90,10 @@ class UtilityFunctions(FreebaseData):
 
   def makeMIDValueFile(self, freebase_pred_file, output_filepath):
     '''Input : freebase data in
-    <http://rdf.freebase.com/ns/m.0105jw0f>\t<http://rdf.freebase.com/predicate>\t"VALUE"    .
+    <http://rdf.freebase.com/ns/m.0105jw0f>\t<http://rdf.freebase.com/ns/predicate>\t"VALUE"    .
 
     Output file:
-    m.m.0105jw0f \t Value
+    m.0105jw0f \t Value
     '''
     def cleanValue(s):
       '''Removes \"s '''
@@ -101,6 +114,45 @@ class UtilityFunctions(FreebaseData):
     out_f.close()
     f.close()
 
+  def makeMentionTypeFile(self, freebase_pred_file, output_filepath):
+    '''Input : freebase data in
+    <http://rdf.freebase.com/ns/m.0105jw0f>\t<http://rdf.freebase.com/ns/predicate>\t<http://rdf.freebase.com/ns/#type#>    .
+
+    Output file:
+    m.0105jw0f \t type
+    '''
+    #enddef
+    print("Making mid \\t Value file...")
+    f = gzip.open(freebase_pred_file, 'rt')
+    out_f = open(output_filepath, 'w')
+
+    line = self.read_line(f)
+    while line != '':
+      l_split = line.split("\t")
+      mid = process_entities.stripRDF(l_split[0])
+      typ = process_entities.stripRDF(l_split[2])
+      if process_entities.filter_mention(mid):
+        out_f.write(str(mid) + "\t" + typ + "\n")
+      line = self.read_line(f)
+    out_f.close()
+    f.close()
+
+  def pruneMidTypes(self, types_file, mid_type_file, output_filepath):
+    types_set = self.type_set(types_filepath=types_file)
+    f = open(mid_type_file, 'r')
+    out_f = open(output_filepath, 'w')
+
+    line = self.read_line(f)
+    while line != '':
+      l_split = line.split("\t")
+      typ = l_split[1].strip()
+      if typ in types_set:
+        out_f.write(line)
+      line = self.read_line(f)
+    out_f.close()
+    f.close()
+
+
 if __name__ == '__main__':
   FLAGS = parser.parse_args()
   default_flags()
@@ -118,8 +170,17 @@ if __name__ == '__main__':
   #   b,
   #   "/home/ngupta19/rnn-vae/data/fb_min_15/mid_min_15",
   #   "/home/ngupta19/rnn-vae/data/fb_min_15/fb_min_15_names")
-  util.makeMIDValueFile("/save/ngupta19/freebase/wikipedia.en_title.gz",
-                        "/save/ngupta19/freebase/mid.wikipedia_en_title")
+
+  # util.makeMIDValueFile(freebase_pred_file="/save/ngupta19/freebase/wikipedia.en_id.gz",
+  #                       output_filepath="/save/ngupta19/freebase/mid.wikipedia_en_id")
+
+  # util.makeMentionTypeFile(freebase_pred_file="/save/ngupta19/freebase/type.object.type.gz",
+  #                          output_filepath="/save/ngupta19/freebase/mid.type")
+
+  util.pruneMidTypes(types_file="/save/ngupta19/freebase/types_xiao",
+                     mid_type_file="/save/ngupta19/freebase/mid.type",
+                     output_filepath="/save/ngupta19/freebase/mid.types")
+
 
 
 
