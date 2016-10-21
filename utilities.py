@@ -152,6 +152,34 @@ class UtilityFunctions(FreebaseData):
     out_f.close()
     f.close()
 
+  def joinMIDNamesMIDWID(self, mid_names, mid_wids, output_file):
+    f = open(mid_wids, 'r')
+
+    mid_wid_dict = {}
+    line = self.read_line(f)
+    while line != '':
+      l_split = line.split("\t")
+      (mid, wid) = (l_split[0].strip(), l_split[1].strip())
+      mid_wid_dict[mid] = wid
+      line = self.read_line(f)
+    # end while
+    f.close()
+    print("Total Mids = %d" % len(mid_wid_dict))
+
+    f = open(mid_names, 'r')
+    out_f = open(output_file, 'w')
+    line = self.read_line(f)
+    while line != '':
+      l_split = line.split("\t")
+      (mid, name) = (l_split[0].strip(), l_split[1].strip())
+      if mid in mid_wid_dict:
+        out_f.write(str(mid) + "\t" + str(name) + "\t" + str(mid_wid_dict[mid]) + "\n")
+      line = self.read_line(f)
+    # end while
+    f.close()
+    out_f.close()
+  #end def
+
 
 if __name__ == '__main__':
   FLAGS = parser.parse_args()
@@ -175,11 +203,15 @@ if __name__ == '__main__':
   #                       output_filepath="/save/ngupta19/freebase/mid.wikipedia_en_id")
 
   # util.makeMentionTypeFile(freebase_pred_file="/save/ngupta19/freebase/type.object.type.gz",
-  #                          output_filepath="/save/ngupta19/freebase/mid.type")
+  #                          output_filepath="/save/ngupta19/freebase/types_pruned/mid.type")
 
-  util.pruneMidTypes(types_file="/save/ngupta19/freebase/types_xiao",
-                     mid_type_file="/save/ngupta19/freebase/mid.type",
-                     output_filepath="/save/ngupta19/freebase/mid.types")
+  # util.pruneMidTypes(types_file="/save/ngupta19/freebase/types_pruned/types_nitish",
+  #                    mid_type_file="/save/ngupta19/freebase/types_pruned/mid.type",
+  #                    output_filepath="/save/ngupta19/freebase/types_pruned/mid.types.pruned")
+
+  util.joinMIDNamesMIDWID(mid_names="/save/ngupta19/freebase/types_pruned/mid.names",
+                          mid_wids="/save/ngupta19/freebase/mid.wikipedia_en_id",
+                          output_file="/save/ngupta19/freebase/types_pruned/mid.names.wiki_id_en")
 
 
 
